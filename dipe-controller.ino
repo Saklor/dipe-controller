@@ -29,12 +29,27 @@
 #define PIN_ID_DIPE_L       9
 
 // PANTALLA
-#define SIPE_1_FILA     42
-#define SIPE_2_FILA     90
-#define SIPE_3_FILA     138
-#define SIPE_4_FILA     186
-#define LOCAL_FILA      234
-#define ACT_REMOTA_FILA 282
+#define COLOR_DEFAULT       0
+#define COLOR_SUCCESS       1
+#define COLOR_ERROR         2
+
+// PANTALLA CENTRAL
+#define DIPE_1_ROW          42
+#define DIPE_2_ROW          90
+#define DIPE_3_ROW          138
+#define DIPE_4_ROW          186
+#define LOCAL_ROW           234
+#define REMOTE_TRIGGER_ROW  282
+// PANTALLA DIPE
+#define DIPE_BATTERY_ROW    10
+#define DIPE_220_ROW        58
+#define DIPE_PRESSURE_1_ROW 106
+#define DIPE_PRESSURE_2_ROW 154
+#define DIPE_PRESSURE_3_ROW 202
+#define DIPE_TRIGGER_ROW    250
+#define DIPE_BAT_220_COL    192
+#define DIPE_PRESSURE_COL   240
+
 
 // BATERIA
 #define DELAY_TEST_BATERIA  7200000 // 2 horas
@@ -196,11 +211,11 @@ void setupCentral() {
     screen.print("CONTROLE CENTRAL",CENTER, 10);
     screen.setColor(240, 225, 150);
     screen.setFont(Grotesk24x48);
-    screen.print("SIPE 1", 10, SIPE_1_FILA);
-    screen.print("SIPE 2", 10, SIPE_2_FILA);
-    screen.print("SIPE 3", 10, SIPE_3_FILA);
-    screen.print("SIPE 4", 10, SIPE_4_FILA);
-    screen.print("LOCAL ", 10, LOCAL_FILA);
+    screen.print("SIPE 1", 10, DIPE_1_ROW);
+    screen.print("SIPE 2", 10, DIPE_2_ROW);
+    screen.print("SIPE 3", 10, DIPE_3_ROW);
+    screen.print("SIPE 4", 10, DIPE_4_ROW);
+    screen.print("LOCAL ", 10, LOCAL_ROW);
 }
 
 
@@ -230,6 +245,15 @@ void setupDipe() {
     if (local_dipe_id == 2 || local_dipe_id == 4)
         bitSet(status, BIT_ID_L);
     bitSet(status, BIT_MSG_CENTRAL);
+
+    // Pantalla
+    screen.setColor(240, 225, 150);
+    screen.print("BATERIA", 10, DIPE_BATTERY_ROW);
+    screen.print("CA 220V", 10, DIPE_220_ROW);
+    screen.print("PRESSAO 1",   10, DIPE_PRESSURE_1_ROW);
+    screen.print("PRESSAO 2",   10, DIPE_PRESSURE_2_ROW);
+    screen.print("PRESSAO 3",   10, DIPE_PRESSURE_3_ROW);
+
 
     // Hago el enable de las tasks que tienen que empezar a ejecutarse
     runner.addTask(testBatteryTask);
@@ -264,7 +288,7 @@ void loopCentral() {
         byte_send = 88;
         screen.setColor(250, 35, 35);
         screen.setFont(Grotesk16x32);
-        screen.print("ATIVACAO REMOTA SIPES ",CENTER, ACT_REMOTA_FILA);
+        screen.print("ATIVACAO REMOTA SIPES ",CENTER, REMOTE_TRIGGER_ROW);
         screen.setFont(Grotesk24x48);
 
         delay(500);
@@ -287,7 +311,7 @@ void loopCentral() {
 
     if ( value == LOW ) {
         screen.setColor(250, 35, 35);
-        screen.print("FALHA CA 220V ",170, LOCAL_FILA);
+        screen.print("FALHA CA 220V ",170, LOCAL_ROW);
 
         digitalWrite(3,HIGH);
         delay(500);
@@ -295,7 +319,7 @@ void loopCentral() {
         delay(500);
     } else {
         screen.setColor(152, 252, 106);
-        screen.print("OK            ",170, LOCAL_FILA);
+        screen.print("OK            ",170, LOCAL_ROW);
     }
 }
 
@@ -334,7 +358,7 @@ void handleByteReceived(int byte_received) {
     // COD_ARE         2 // Fallo de Area
     // COD_PRE         1 // Fallo de Presion
     // COD_ACT         0 // Activado
-    int sipe_id = ((bitRead(byte_received, BIT_ID_H) * 2) + bitRead(byte_received, BIT_ID_L));
+    int DIPE_id = ((bitRead(byte_received, BIT_ID_H) * 2) + bitRead(byte_received, BIT_ID_L));
 
     bool central_msg =      bitRead(byte_received, BIT_MSG_CENTRAL);
 
@@ -348,22 +372,22 @@ void handleByteReceived(int byte_received) {
         int fila = 0;
 
         // Me fijo en que fila tengo que imprimir el error, de paso chequeo que haya venido bien el ID
-        switch(sipe_id) {
+        switch(DIPE_id) {
             case 0:
-                fila = SIPE_1_FILA;
+                fila = DIPE_1_ROW;
                 break;
             case 1:
-                fila = SIPE_2_FILA;
+                fila = DIPE_2_ROW;
                 break;
             case 2:
-                fila = SIPE_3_FILA;
+                fila = DIPE_3_ROW;
                 break;
             case 3:
-                fila = SIPE_4_FILA;
+                fila = DIPE_4_ROW;
                 break;
             default:
                 Serial.print("Error leyendo ID de SIPE. Se obtuvo el valor ");
-                Serial.println(sipe_id);
+                Serial.println(DIPE_id);
                 return;
         }
 
@@ -397,7 +421,7 @@ void handleByteReceived(int byte_received) {
             }
             buzzerAlarm(true);
         }
-    } else if (!is_central && sipe_id == local_dipe_id) {
+    } else if (!is_central && DIPE_id == local_dipe_id) {
         if (triggered){
             screen.clrScr();
             screen.print("REMOTO", CENTER, 10);
@@ -443,7 +467,7 @@ void turnLEDOn(int led_pin) {
 void testBatteryCallback()
 {
     Serial.println("Realizando test de bateria.");
-    screen.print("TESTE DE BATERIA", CENTER, 10);
+    printColor("TESTE      ", DIPE_BAT_220_COL, DIPE_BATTERY_ROW, COLOR_DEFAULT);
 
     digitalWrite(RELE_BATTERY, HIGH);
     sensor_value[SENSOR_BATTERY_ID] = 100;
@@ -459,12 +483,13 @@ void testBatteryCallback()
         digitalWrite(BUZZER, LOW);
 
         if (valueChanged(previous_sensor_value[SENSOR_BATTERY_ID], sensor_value[SENSOR_BATTERY_ID])) {
-            screen.print("    FALHA BATERIA    ", CENTER, 10);
+            printColor("FALHA      ", DIPE_BAT_220_COL, DIPE_BATTERY_ROW, COLOR_ERROR);
             previous_sensor_value[SENSOR_BATTERY_ID] = sensor_value[SENSOR_BATTERY_ID];
 
             updateStatus(STATUS_BATTERY, true);
         }
     } else {
+        printColor("OK         ", DIPE_BAT_220_COL, DIPE_BATTERY_ROW, COLOR_SUCCESS);
         updateStatus(STATUS_BATTERY, false);
     }
 
@@ -499,6 +524,7 @@ void checkSensors() {
     int id = 0;
     int id_pressure_status = 0;
     int id_area_status = 0;
+    int row = 0;
 
     // Leo todos los sensores
     for (int i = 0; i < SENSOR_AMOUNT; ++i)
@@ -511,19 +537,25 @@ void checkSensors() {
             id = SENSOR_GAS_1_ID;
             id_pressure_status = STATUS_PRESSURE_1;
             id_area_status = STATUS_PRESSURE_1;
+            row = DIPE_PRESSURE_1_ROW;
         } else if (i == 1) {
             id = SENSOR_GAS_2_ID;
             id_pressure_status = STATUS_PRESSURE_2;
             id_area_status = STATUS_PRESSURE_2;
+            row = DIPE_PRESSURE_2_ROW;
         } else if (i == 2) {
             id = SENSOR_GAS_3_ID;
             id_pressure_status = STATUS_PRESSURE_3;
             id_area_status = STATUS_PRESSURE_3;
+            row = DIPE_PRESSURE_3_ROW;
         }
 
         if (sensor_value[id] >= 500 && sensor_value[id] <= 525) {
             // Si el valor esta entre 500 y 525 entonces no hay errores
             if (valueChanged(previous_sensor_value[id], sensor_value[id])) {
+                printColor("PRESSAO   ", 10, row, COLOR_DEFAULT);
+                screen.printNumI((i + 1), 192, row);
+                printColor("OK       ", DIPE_PRESSURE_COL, row, COLOR_SUCCESS);
                 previous_sensor_value[id] = sensor_value[id];
 
                 updateStatus(id_pressure_status,   false);
@@ -534,8 +566,9 @@ void checkSensors() {
             buzzOnce(500);
 
             if (valueChanged(previous_sensor_value[id], sensor_value[id])) {
-                screen.print("PRESSAO   FALHA", CENTER, 10);
-                screen.printNumI(i, CENTER, 10);
+                printColor("PRESSAO   ", 10, row, COLOR_DEFAULT);
+                screen.printNumI((i + 1), 192, row);
+                printColor("FALHA    ", DIPE_PRESSURE_COL, row, COLOR_ERROR);
                 previous_sensor_value[id] = sensor_value[id];
 
                 updateStatus(id_pressure_status, true);
@@ -545,8 +578,8 @@ void checkSensors() {
             buzzOnce(500);
 
             if (valueChanged(previous_sensor_value[id], sensor_value[id])) {
-                screen.print("AREA   FALHA", CENTER, 10);
-                screen.printNumI(i, CENTER, 10);
+                printColor("FALHA AREA         ", 10, row, COLOR_ERROR);
+                screen.printNumI((i + 1), 274, row);
                 previous_sensor_value[id] = sensor_value[id];
 
                 updateStatus(id_area_status, true);
@@ -560,13 +593,15 @@ void checkSensors() {
         buzzOnce(500);
 
         if (valueChanged(previous_sensor_value[SENSOR_CA_ID], sensor_value[SENSOR_CA_ID])) {
-            screen.print("FALHA AC 220V", CENTER, 136);
+            printColor("FALHA      ", DIPE_BAT_220_COL, DIPE_220_ROW, COLOR_ERROR);
             previous_sensor_value[SENSOR_CA_ID] = sensor_value[SENSOR_CA_ID];
 
             updateStatus(STATUS_CA, true);
         }
-    } else
+    } else {
+        printColor("OK         ", DIPE_BAT_220_COL, DIPE_220_ROW, COLOR_SUCCESS);
         updateStatus(STATUS_CA, false);
+    }
 }
 
 
@@ -656,4 +691,33 @@ void buzzOnce(int ms) {
 // La idea es que se llame desde una alarma para poder seguir mientras suena el buzzer.
 void turnBuzzerOffCallback() {
     digitalWrite(BUZZER, LOW);
+}
+
+void printColor(String st, int x, int y, int color) {
+    switch (color) {
+        case COLOR_DEFAULT:
+            screen.setColor(240, 225, 150);
+            break;
+        case COLOR_SUCCESS:
+            screen.setColor(152, 252, 106);
+            break;
+        case COLOR_ERROR:
+            screen.setColor(250, 35, 35);
+            break;
+    }
+    screen.print(st, x, y);
+}
+void printColor(char *st, int x, int y, int color) {
+    switch (color) {
+        case COLOR_DEFAULT:
+            screen.setColor(240, 225, 150);
+            break;
+        case COLOR_SUCCESS:
+            screen.setColor(152, 252, 106);
+            break;
+        case COLOR_ERROR:
+            screen.setColor(250, 35, 35);
+            break;
+    }
+    screen.print(st, x, y);
 }
