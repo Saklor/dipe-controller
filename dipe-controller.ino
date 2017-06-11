@@ -162,16 +162,16 @@ void setup() {
 
     if (digitalRead(PIN_IS_CENTRAL) == HIGH) {
         is_central = true;
-        screen.print("DETECTADO CONTROL CENTRAL", CENTER, 58);
+        screen.print("SELECIONADA CENTRAL", CENTER, 58);
     }
     else {
         is_central = false;
-        screen.print("DETECTADO DIPE", CENTER, 58);
+        screen.print("SELECIONADO SIPE", CENTER, 58);
         delay(750);
         local_dipe_id = 1;
         if (digitalRead(PIN_ID_DIPE_L) == HIGH) local_dipe_id += 1;
         if (digitalRead(PIN_ID_DIPE_H) == HIGH) local_dipe_id += 2;
-        screen.print("DIPE ID:", CENTER, 106);
+        screen.print("SIPE ID:", CENTER, 106);
         screen.printNumI(local_dipe_id, CENTER, 154);
     }
 
@@ -528,7 +528,6 @@ void checkSensors() {
 
                 updateStatus(id_pressure_status,   false);
                 updateStatus(id_area_status,       false);
-                // txok();
             }
         } else if (sensor_value[id] <= 25) {
             // Si el valor esta por debajo de 25 entonces falla presion
@@ -540,7 +539,6 @@ void checkSensors() {
                 previous_sensor_value[id] = sensor_value[id];
 
                 updateStatus(id_pressure_status, true);
-                // txpresion();
             }
         } else if (sensor_value[id] >= 980) {
             // Si el valor esta por encima de 980 entonces falla area
@@ -552,7 +550,6 @@ void checkSensors() {
                 previous_sensor_value[id] = sensor_value[id];
 
                 updateStatus(id_area_status, true);
-                // txlinea();
             }
         }
     }
@@ -567,7 +564,6 @@ void checkSensors() {
             previous_sensor_value[SENSOR_CA_ID] = sensor_value[SENSOR_CA_ID];
 
             updateStatus(STATUS_CA, true);
-            // txca();
         }
     } else
         updateStatus(STATUS_CA, false);
